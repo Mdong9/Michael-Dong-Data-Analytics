@@ -1,5 +1,6 @@
+setwd("~/RPI/Coterm_Fall_2024/Data_Analytics/Michael-Dong-Data-Analytics/Lab1/")
 
-EPI_data <- read.csv("C:/Users/dongm2/Documents/RPI/Coterm_Fall_2024/Data_Analytics/epi2024results06022024.csv") 
+EPI_data <- read.csv("epi2024results06022024.csv") 
 View(EPI_data)
 
 attach(EPI_data)
