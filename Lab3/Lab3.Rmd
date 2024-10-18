@@ -1,0 +1,210 @@
+---
+title: "Lab3"
+output: html_document
+date: "2024-10-04"
+---
+Variable Distributions (2%)
+Using the EPI results dataset to perform the following:
+1. Derive 2 subsets each for a particular region
+  1.1. Plot histograms for a variable of your choice for both regions with density             lines overlayed
+  
+  1.2. Plot QQ plots for both variables compared to known probability distributions.
+```{r}
+setwd("~/RPI/Coterm_Fall_2024/Data_Analytics/Michael-Dong-Data-Analytics/Lab3/")
+EPI_data <- read.csv("epi2024results_DA_F24_lab03.csv")
+# View(EPI_data)
+set.seed(123)
+attach(EPI_data)
+
+Asia_Pacific <- EPI_data[EPI_data$region == "Asia-Pacific",]
+Sub_Sahara <- EPI_data[EPI_data$region == "Sub-Saharan Africa",]
+
+# summary(Asia_Pacific)
+# summary(Sub_Sahara)
+
+hist(Asia_Pacific$EPI, seq(20., 70., 1.0), prob=TRUE)
+lines(density(Asia_Pacific$EPI,na.rm=TRUE,bw=1.))
+
+hist(Sub_Sahara$EPI, seq(20., 60., 1.0), prob=TRUE)
+lines(density(Sub_Sahara$EPI,na.rm=TRUE,bw=1.))
+
+
+qqplot(rnorm(250), Asia_Pacific$EPI, xlab = "Q-Q plot for norm dsn")
+qqline(Asia_Pacific$EPI)
+
+qqplot(rt(250, df = 5) ,Sub_Sahara$EPI, xlab = "Q-Q plot for norm dsn")
+qqline(Sub_Sahara$EPI)
+```
+
+
+Linear Models (3%)
+Using the EPI results dataset to perform the following:
+2. Fit linear models as follows:
+  2.1. Choose a subset of 5 variables (excluding EPI) and using the formula
+        EPI~VAR1+VAR2+VAR3+VAR4+VAR5, fit a linear model and identify which variable          most significantly influences EPI. Plot that variable with another and overlay        the fitted line.
+        
+  2.2. Repeat the previous model with a subset of 1 region and in 1-2 sentences              explain which model is a better fit and why you think that is the case.
+  
+  2.2 Answer: The model that includes all regions because there are more data points                to train from which allows better prediction models.
+```{r}
+library(ggplot2)
+setwd("~/RPI/Coterm_Fall_2024/Data_Analytics/Michael-Dong-Data-Analytics/Lab3/")
+EPI_data <- read.csv("epi2024results_DA_F24_lab03.csv")
+# View(EPI_data)
+attach(EPI_data)
+set.seed(123)
+
+Asia_Pacific <- na.omit(EPI_data[EPI_data$region == "Asia-Pacific",])
+# Sub_Sahara <- na.omit(EPI_data[EPI_data$region == "Sub-Saharan Africa",])
+# East_Euro <- na.omit(EPI_data[EPI_data$region == "Eastern Europe",])
+# Global_West <- na.omit(EPI_data[EPI_data$region == "Global West",])
+
+# lin.mod.epi_asia <- lm(EPI~BDH+ECO+VOE+WWR+MKP, Asia_Pacific)
+# lin.mod.epi_asia <- lm(EPI~BDH+ECO+VOE+WWR+MKP, EPI_data)
+
+# summary(lin.mod.epi_asia)
+
+ggplot(EPI_data, aes(x = ECO, y = BDH)) +
+  geom_point() +
+  stat_smooth(method = "lm")
+
+ggplot(Asia_Pacific, aes(x = ECO, y = BDH)) +
+  geom_point() +
+  stat_smooth(method = "lm")
+```
+
+
+Classification (kNN) (3%)
+Using the EPI results dataset to perform the following:
+3. Train 2 kNN models using ”region” as the class label as follows:
+  3.1. Choose a subset of 5 variables and filter the subset by region keeping 3             regions out of 8 (representing 3 classes), then train a kNN model to predict the       region based on these variables. Evaluate the model using a contingency matrix        and calculate the accuracy of correct classifications.
+  
+  3.2. Repeat the previous model with the same variables for another set of 3 other          regions and evaluate. In 1- 2 sentences explain which model is better and why         you think that is the case.
+  
+  3.2 Answer: The first model (sub_region 1) because it has a higher accuracy. This is
+              the case because the subset of regions in the second model may not be   
+              closely correlated with each other due to location or current state of 
+              situtations. 
+  
+```{r}
+setwd("~/RPI/Coterm_Fall_2024/Data_Analytics/Michael-Dong-Data-Analytics/Lab3/")
+
+library(class)
+set.seed(123)
+EPI_data <- read.csv("epi2024results_DA_F24_lab03.csv")
+filtered_EPI_data <- EPI_data[,c(1:8,14,15)]
+sub_region1 <- filtered_EPI_data[filtered_EPI_data$region %in% c("Asia-Pacific", "Eastern Europe", "Global West"),]
+
+s_region <- sample(66,46)
+
+#  ## create train & test sets based on sampled indexes
+sub_region1.train <- sub_region1[s_region,]
+sub_region1.test <- sub_region1[-s_region,]
+
+sub_region1.train <- sub_region1.train[complete.cases(sub_region1.train),]
+sub_region1.test <- sub_region1.test[complete.cases(sub_region1.test),]
+
+# train model & predict
+KNNpred <- knn(train = sub_region1.train[6:10], test = sub_region1.test[6:10], cl = sub_region1.train$region, k = 5)
+# create contingency table/ confusion matrix
+contingency.table <- table(KNNpred,sub_region1.test$region)
+
+contingency.table
+
+contingency.matrix = as.matrix(contingency.table)
+sum(diag(contingency.matrix))/length(sub_region1.test$region)
+accuracy <- c()
+ks <- c(3,5,7,9,11)
+for (k in ks) {
+KNNpred <- knn(train = sub_region1.train[6:10], test = sub_region1.test[6:10], cl = sub_region1.train$region, k = k)
+cm = as.matrix(table(Actual=KNNpred, Predicted = sub_region1.test$region, dnn=list('predicted','actual')))
+
+accuracy <- c(accuracy,sum(diag(cm))/length(sub_region1.test$region))
+}
+plot(ks,accuracy,type = "b", main = "sub_region 1")
+
+#############Second subset of regions
+sub_region2 <- filtered_EPI_data[filtered_EPI_data$region %in% c("Sub-Saharan Africa", "Latin America & Caribbean", "Greater Middle East"),]
+s_region2 <- sample(94,65)
+
+
+#  ## create train & test sets based on sampled indexes
+sub_region2.train <- sub_region2[s_region2,]
+sub_region2.test <- sub_region2[-s_region2,]
+
+sub_region2.train <- sub_region2.train[complete.cases(sub_region2.train),]
+sub_region2.test <- sub_region2.test[complete.cases(sub_region2.test),]
+
+# train model & predict
+KNNpred <- knn(train = sub_region2.train[6:10], test = sub_region2.test[6:10], cl = sub_region2.train$region, k = 5)
+# create contingency table/ confusion matrix
+contingency.table <- table(KNNpred,sub_region2.test$region)
+
+contingency.table
+
+contingency.matrix = as.matrix(contingency.table)
+sum(diag(contingency.matrix))/length(sub_region2.test$region)
+accuracy <- c()
+ks <- c(3,5,7,9,11)
+for (k in ks) {
+KNNpred <- knn(train = sub_region2.train[6:10], test = sub_region2.test[6:10], cl = sub_region2.train$region, k = k)
+cm = as.matrix(table(Actual=KNNpred, Predicted = sub_region2.test$region, dnn=list('predicted','actual')))
+
+accuracy <- c(accuracy,sum(diag(cm))/length(sub_region2.test$region))
+}
+plot(ks,accuracy,type = "b", main = "sub_region 2")
+```
+
+
+Clustering (3%)
+Using the EPI results dataset to perform the following:
+1. Fit a k-means model for a subset of 5 variables for 2 different groups of regions        (3 each)
+  1.1. Compare the performance of the models using their within cluster sum of                squares.
+  
+  1.2. In a loop, fit kmeans models for both subsets using multiple values of k. Plot          WCSS across k values. In 1-2 sentences explain which model is better and why            you think that is the case.
+  
+  1.2 Answer: Model 1 (group 1) because it has a lower WSS range meaning points are                 grouped much tighter together as number of clusters increase vs Model 2.               This might be the case because the subset of model 2 might have a lot of               wide-ranging points resulting in less consistent points around a                      cluster's centroid 
+```{r}
+#EPI, ECO, BDH, TBN, TKP
+setwd("~/RPI/Coterm_Fall_2024/Data_Analytics/Michael-Dong-Data-Analytics/Lab3/")
+library(rpart)
+library(ggplot2)
+library(rpart.plot)
+
+EPI_data <- read.csv("epi2024results_DA_F24_lab03.csv")
+filtered_EPI_data <- EPI_data[,c(1:8,14,15)]
+
+group1 <- filtered_EPI_data[filtered_EPI_data$region %in% c("Asia-Pacific", "Eastern Europe", "Global West"),]
+
+group2 <- filtered_EPI_data[filtered_EPI_data$region %in% c("Sub-Saharan Africa", "Latin America & Caribbean", "Greater Middle East"),]
+
+# set seed for random number generator
+set.seed(123)
+# run k-means
+group1.km <- kmeans(group1[,6:10], centers = 3)
+wss <- c()
+wss <- c(wss,group1.km$tot.withinss)
+wss
+
+group2.km <- kmeans(group2[,6:10], centers = 3)
+wss2 <- c()
+wss2 <- c(wss2,group2.km$tot.withinss)
+wss2
+
+wss <- c()
+ks <- c(3,5,7,9)
+for (k in ks) {
+group1.km <- kmeans(group1[,6:10], centers = k)
+wss <- c(wss,group1.km$tot.withinss)
+}
+plot(ks,wss,type = "b", main ="group 1")
+
+wss2 <- c()
+ks <- c(3,5,7,9)
+for (k in ks) {
+group2.km <- kmeans(group2[,6:10], centers = k)
+wss2 <- c(wss2,group2.km$tot.withinss)
+}
+plot(ks,wss2,type = "b", main = "group 2")
+```
+

@@ -5,59 +5,59 @@ date: "2024-10-04"
 ---
 
 ```{r}
-# library("e1071")
-# 
-# #insta
-# 
-# iris
-# 
-# iris.df <- iris
-# #?naiveBayes
-# 
-# classifier <- naiveBayes(iris[,1:4], iris[,5])
-# 
-# classifier
-# 
-# prediction <- predict(classifier, iris[,-5])
-# 
-# prediction
-# 
-# table(prediction, iris[,5], dnn=list('predicted','actual'))
-# 
-# classifier$apriori
-# 
-# classifier$tables$Petal.Length
-# 
-# plot(function(x) dnorm(x, 1.462, 0.1736640), 0, 8, col="red", main="Petal length distribution for the 3 different species") 
-# 
-# curve(dnorm(x, 4.260, 0.4699110), add=TRUE, col="blue") 
-# 
-# curve(dnorm(x, 5.552, 0.5518947 ), add=TRUE, col = "green")
-# 
-# library(rpart)
-# 
-# library(rpart.plot)
-# 
-# dim(iris)
-# 
-# s_iris <- sample(150,100)
-# 
-# s_iris
-# 
-# iris_train <-iris[s_iris,]
-# 
-# iris_test <-iris[-s_iris,] 
-# 
-# dim(iris_test)
-# dim(iris_train) 
-# 
-# # ?rpart
-# 
-# dectionTreeModel <- rpart(Species~., iris_train, method = "class") 
-# 
-# dectionTreeModel
-# 
-# rpart.plot(dectionTreeModel) 
+library("e1071")
+
+#insta
+
+iris
+
+iris.df <- iris
+#?naiveBayes
+
+classifier <- naiveBayes(iris[,1:4], iris[,5])
+
+classifier
+
+prediction <- predict(classifier, iris[,-5])
+
+prediction
+
+table(prediction, iris[,5], dnn=list('predicted','actual'))
+
+classifier$apriori
+
+classifier$tables$Petal.Length
+
+plot(function(x) dnorm(x, 1.462, 0.1736640), 0, 8, col="red", main="Petal length distribution for the 3 different species")
+
+curve(dnorm(x, 4.260, 0.4699110), add=TRUE, col="blue")
+
+curve(dnorm(x, 5.552, 0.5518947 ), add=TRUE, col = "green")
+
+library(rpart)
+
+library(rpart.plot)
+
+dim(iris)
+
+s_iris <- sample(150,100)
+
+s_iris
+
+iris_train <-iris[s_iris,]
+
+iris_test <-iris[-s_iris,]
+
+dim(iris_test)
+dim(iris_train)
+
+# ?rpart
+
+dectionTreeModel <- rpart(Species~., iris_train, method = "class")
+
+dectionTreeModel
+
+rpart.plot(dectionTreeModel)
 ```
 
 Exercise 1:
@@ -129,13 +129,17 @@ Exercise 2:
 • Try 2 different subsets of features.
 • Compare models using contingency tables and accuracy plots.
 ```{r}
+setwd("~/RPI/Coterm_Fall_2024/Data_Analytics/Michael-Dong-Data-Analytics/Lab2p2")
 iris <- read.csv("iris.csv", header = FALSE, sep = ",")
+library(rpart)
+library(ggplot2)
+library(rpart.plot)
 
 colnames(iris) <- c("id", "Sepal.Length", "Sepal.Width", 'Petal.Length', 'Petal.Width', 'Species')
 
-# drop the sex column (categorical variable)
+# # drop the sex column (categorical variable)
 iris.norm <- iris[-1,-1]
-# optionally normalize
+# # optionally normalize
 iris.norm
 s_iris <- sample(151,100)
 
@@ -146,7 +150,7 @@ iris.test <-iris.norm[-s_iris,]
 iris.train <- iris.train[complete.cases(iris.train),]
 iris.test <- iris.test[complete.cases(iris.test),]
 # train model & predict
-KNNpred <- knn(train = iris.train[1:2], test = iris.test[1:2], cl = iris.train$Species, k = 55)
+KNNpred <- knn(train = iris.train[,1:2], test = iris.test[,1:2], cl = iris.train$Species, k = 55)
 # create contingency table/ confusion matrix
 contingency.table <- table(KNNpred,iris.test$Species)
 
