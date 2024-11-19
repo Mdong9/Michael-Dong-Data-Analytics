@@ -1,0 +1,264 @@
+---
+title: "Lab4"
+author: "Michael Dong"
+date: "2024-11-08"
+output: html_document
+---
+Using the wine dataset:
+```{r}
+##########################################
+### Principal Component Analysis (PCA) ###
+##########################################
+
+library(ggfortify)
+library(e1071)
+library(class)
+library(psych)
+library(readr)
+
+# PCA with iris dataset
+setwd("~/RPI/Coterm_Fall_2024/Data_Analytics/Michael-Dong-Data-Analytics/Lab4/")
+wine <- read_csv("./wine/wine.data", col_names = FALSE)
+names(wine) <- c("Type","Alcohol","Malic acid","Ash","Alcalinity of ash","Magnesium","Total phenols","Flavanoids","Nonflavanoid Phenols","Proanthocyanins","Color Intensity","Hue","Od280/od315 of diluted wines","Proline")
+head(wine)
+wine$Type <- as.factor(wine$Type)
+```
+
+
+
+● Compute the PCs and plot the dataset using the 1st and 2nd PC.
+```{r}
+##################################################################
+#Compute the PCs and plot the dataset using the 1st and 2nd PC.
+##################################################################
+principal_components <- princomp(wine[,-1], cor = TRUE, score = TRUE)
+
+plot(principal_components)
+
+plot(principal_components, type = "l")
+
+biplot(principal_components)
+
+autoplot(principal_components, data = wine, colour = 'Type',
+         loadings = TRUE, loadings.colour = 'blue',
+         loadings.label = TRUE, loadings.label.size = 3)
+
+# wine <- wine[,-c(4,5,10)]
+
+# pairs.panels(wine[,-1],gap = 0,bg = c("red", "yellow", "blue")[wine$Type],pch=21)
+```
+
+
+
+● Identify the variables that contribute the most to the 1st PC.
+```{r}
+##################################################################
+#Identify the variables that contribute the most to the 1st PC.
+#"Total phenols", "Flavanoids", "Nonflavanoid Phenols", "Od280/od315 of diluted wines"
+##################################################################
+```
+
+
+
+● Train a classifier model to predict wine type using the 13 attributes.
+```{r}
+##################################################################
+#Train a classifier model to predict wine type using the 13 attributes.
+##################################################################
+set.seed(123)
+wine_sample <- sample(178,125)
+#train > test
+
+wine.train <- wine[wine_sample,]
+wine.test <- wine[-wine_sample,]
+
+#KNN
+KNNpred1 <- knn(train = wine.train[,-1], test = wine.test[,-1], cl = wine.train$Type, k = 13)
+contingency.table <- table(KNNpred1,wine.test$Type)
+# contingency.table
+
+#KNN Accuracy graph
+contingency.matrix = as.matrix(contingency.table)
+sum(diag(contingency.matrix))/length(wine.test$Type)
+accuracy <- c()
+ks <- c(3,5,7,9,11)
+for (k in ks) {
+KNNpred <- knn(train = wine.train[,-1], test = wine.test[,-1], cl = wine.train$Type, k = k)
+cm = as.matrix(table(Actual=KNNpred, Predicted = wine.test$Type, dnn=list('predicted','actual')))
+
+accuracy <- c(accuracy,sum(diag(cm))/length(wine.test$Type))
+}
+plot(ks,accuracy,type = "b", main = "Wines (13 attr.)")
+```
+
+
+
+● Train a classifier model to predict wine type using the data projected into the first 3 PCs.
+```{r}
+##################################################################
+#Train a classifier model to predict wine type using the data projected into the first 3 PCs.
+##################################################################
+PCA_Score <- principal_components$scores
+
+#KNN
+KNNpred2 <- knn(train = PCA_Score, test = PCA_Score, cl = wine$Type, k = 13)
+contingency.table <- table(KNNpred2,wine$Type)
+# contingency.table
+
+#KNN Accuracy graph
+contingency.matrix = as.matrix(contingency.table)
+sum(diag(contingency.matrix))/length(wine.test$Type)
+accuracy <- c()
+ks <- c(3,5,7,9,11)
+for (k in ks) {
+KNNpred <- knn(train = PCA_Score[,c(1,2,3)], test = PCA_Score[,c(1,2,3)], cl = wine$Type, k = k)
+cm = as.matrix(table(Actual=KNNpred, Predicted = wine$Type, dnn=list('predicted','actual')))
+
+accuracy <- c(accuracy,sum(diag(cm))/length(wine$Type))
+}
+plot(ks,accuracy,type = "b", main = "PC Wines")
+```
+
+
+
+● Drop the variables least contributing to the 1st PC and rerun PCA.
+```{r}
+##################################################################
+#Drop the variables least contributing to the 1st PC and rerun PCA.
+##################################################################
+filtered_wine <- wine[,-c(2,4,6,11)]
+# filtered_wine
+
+filtered_wine_sample <- sample(178,125)
+#train > test
+
+filtered_wine.train <- wine[filtered_wine_sample,]
+filtered_wine.test <- wine[-filtered_wine_sample,]
+
+#KNN
+KNNpred <- knn(train = filtered_wine.train[,-1], test = filtered_wine.test[,-1], cl = filtered_wine.train$Type, k = 13)
+contingency.table <- table(KNNpred,filtered_wine.test$Type)
+# contingency.table
+
+#KNN Accuracy graph
+contingency.matrix = as.matrix(contingency.table)
+sum(diag(contingency.matrix))/length(filtered_wine.test$Type)
+accuracy <- c()
+ks <- c(3,5,7,9,11)
+for (k in ks) {
+KNNpred <- knn(train = filtered_wine.train[,-1], test = filtered_wine.test[,-1], cl = filtered_wine.train$Type, k = k)
+cm = as.matrix(table(Actual=KNNpred, Predicted = filtered_wine.test$Type, dnn=list('predicted','actual')))
+
+accuracy <- c(accuracy,sum(diag(cm))/length(filtered_wine.test$Type))
+}
+plot(ks,accuracy,type = "b", main = "Filtered Wines (9 attr.)")
+```
+
+
+
+● Train a classifier model to predict wine type using the data projected into the first 3 PCs after rerunning PCA.
+```{r}
+##################################################################
+#Train a classifier model to predict wine type using the data projected into the first 3 PCs after rerunning PCA.
+##################################################################
+principal_components <- princomp(filtered_wine[,-1], cor = TRUE, score = TRUE)
+
+# plot(principal_components)
+# 
+# plot(principal_components, type = "l")
+# 
+# biplot(principal_components)
+# 
+# autoplot(principal_components, data = wine, colour = 'Type',
+#          loadings = TRUE, loadings.colour = 'blue',
+#          loadings.label = TRUE, loadings.label.size = 3)
+
+PCA_Score <- principal_components$scores
+
+#KNN
+KNNpred3 <- knn(train = PCA_Score, test = PCA_Score, cl = wine$Type, k = 13)
+contingency.table <- table(KNNpred3,wine$Type)
+# contingency.table
+
+#KNN Accuracy graph
+contingency.matrix = as.matrix(contingency.table)
+sum(diag(contingency.matrix))/length(wine.test$Type)
+accuracy <- c()
+ks <- c(3,5,7,9,11)
+for (k in ks) {
+KNNpred <- knn(train = PCA_Score[,c(1,2,3)], test = PCA_Score[,c(1,2,3)], cl = wine$Type, k = k)
+cm = as.matrix(table(Actual=KNNpred, Predicted = wine$Type, dnn=list('predicted','actual')))
+
+accuracy <- c(accuracy,sum(diag(cm))/length(wine$Type))
+}
+plot(ks,accuracy,type = "b", main = "PC filtered Wines (9 attr.)")
+```
+
+
+
+● Compare the 3 classification models using contingency tables and prevision/recall/f1 metrics
+```{r}
+##################################################################
+#Compare the 3 classification models using contingency tables and prevision/recall/f1 metrics
+##################################################################
+
+#First classifier (all 13 attr. no pc)
+cm <- table(Predicted=KNNpred1, Actual = wine.test$Type, dnn=list('predicted','actual'))
+# cm
+
+n = sum(cm) # number of instances
+nc = nrow(cm) # number of classes
+diag = diag(cm) # number of correctly classified instances per class
+rowsums = apply(cm, 1, sum) # number of instances per class
+colsums = apply(cm, 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted
+
+precision = diag / colsums
+recall = diag / rowsums
+f1 = 2 * precision * recall / (precision + recall)
+
+data.frame(recall, precision, f1)
+```
+
+
+```{r}
+#Second classifier (3 PCs)
+cm <- table(Predicted=KNNpred2, Actual = wine$Type, dnn=list('predicted','actual'))
+# cm
+
+n = sum(cm) # number of instances
+nc = nrow(cm) # number of classes
+diag = diag(cm) # number of correctly classified instances per class
+rowsums = apply(cm, 1, sum) # number of instances per class
+colsums = apply(cm, 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted
+
+precision = diag / colsums
+recall = diag / rowsums
+f1 = 2 * precision * recall / (precision + recall)
+
+data.frame(recall, precision, f1)
+```
+
+
+```{r}
+#Third classifier (3 PCs -least contributing attr.)
+cm <- table(Predicted=KNNpred2, Actual = wine$Type, dnn=list('predicted','actual'))
+# cm
+
+n = sum(cm) # number of instances
+nc = nrow(cm) # number of classes
+diag = diag(cm) # number of correctly classified instances per class
+rowsums = apply(cm, 1, sum) # number of instances per class
+colsums = apply(cm, 2, sum) # number of predictions per class
+p = rowsums / n # distribution of instances over the actual classes
+q = colsums / n # distribution of instances over the predicted
+
+precision = diag / colsums
+recall = diag / rowsums
+f1 = 2 * precision * recall / (precision + recall)
+
+data.frame(recall, precision, f1)
+```
