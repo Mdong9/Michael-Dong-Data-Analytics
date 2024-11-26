@@ -9,6 +9,7 @@ output: html_document
 
 library("caret")
 library(e1071)
+library(class)
 
 setwd(getwd())
 wine_data <- read.csv("./wine/wine.data", header = FALSE, sep = ",")      #wine attribute data
